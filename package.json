@@ -1,0 +1,38 @@
+{
+  "name": "burdy-web-utils",
+  "version": "1.0.0",
+  "description": "Utility library for web",
+  "main": "index.js",
+  "author": {
+    "email": "hello@burdy.io",
+    "name": "Burdy Technologies",
+    "url": "https://burdy.io"
+  },
+  "maintainers": [
+    {
+      "name": "Burdy Technologies",
+      "email": "hello@burdy.io",
+      "url": "https://burdy.io"
+    }
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "dev": "ts-node -T index.ts",
+    "precompile": "rimraf dist",
+    "compile": "tsc",
+    "postcompile": "ncp README.md dist/README.md && ncp LICENSE dist/LICENSE"
+  },
+  "devDependencies": {
+    "@types/node": "^16.7.10",
+    "ncp": "^2.0.0",
+    "rimraf": "^3.0.2",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.2"
+  },
+  "keywords": [
+    "burdy",
+    "utility",
+    "helper",
+    "web"
+  ]
+}
