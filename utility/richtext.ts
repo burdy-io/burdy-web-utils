@@ -1,8 +1,8 @@
+import {forEach, isEmptyString} from './helpers';
+
 /**
  * Mapping block-type to corresponding html tag.
  */
-import {forEach, isEmptyString} from './helpers';
-
 const blockTypesMapping = {
   'unstyled': 'p',
   'header-one': 'h1',
@@ -507,6 +507,81 @@ const isList = (blockType) => {
 };
 
 /**
+ * Function to check if a block is of type code.
+ */
+const isCode = (blockType) => {
+  return blockType === 'code-block';
+};
+
+/**
+ * Function will return html markup for a list block.
+ */
+const getCodeMarkup = (
+  codeBlocks,
+  entityMap,
+  hashtagConfig,
+  directional,
+  customEntityTransform?
+) => {
+  const codeHtml = [];
+  let nestedCodeBlock = [];
+  let previousBlock;
+  codeBlocks.forEach((block) => {
+    let nestedBlock = false;
+    if (!previousBlock) {
+      codeHtml.push(`<${getBlockTag(block.type)}>\n`);
+    } else if (previousBlock.type !== block.type) {
+      codeHtml.push(`</${getBlockTag(previousBlock.type)}>\n`);
+      codeHtml.push(`<${getBlockTag(block.type)}>\n`);
+    } else if (previousBlock.depth === block.depth) {
+      if (nestedCodeBlock && nestedCodeBlock.length > 0) {
+        codeHtml.push(getListMarkup(
+          nestedCodeBlock,
+          entityMap,
+          hashtagConfig,
+          directional,
+          customEntityTransform
+        ));
+        nestedCodeBlock = [];
+      }
+    } else {
+      nestedBlock = true;
+      nestedCodeBlock.push(block);
+    }
+    if (!nestedBlock) {
+      codeHtml.push('<pre');
+      const blockStyle = getBlockStyle(block.data);
+      if (blockStyle) {
+        codeHtml.push(` style="${blockStyle}"`);
+      }
+      if (directional) {
+        codeHtml.push(' dir = "auto"');
+      }
+      codeHtml.push('>');
+      codeHtml.push(getBlockInnerMarkup(
+        block,
+        entityMap,
+        hashtagConfig,
+        customEntityTransform
+      ));
+      codeHtml.push('</pre>\n');
+      previousBlock = block;
+    }
+  });
+  if (nestedCodeBlock && nestedCodeBlock.length > 0) {
+    codeHtml.push(getListMarkup(
+      nestedCodeBlock,
+      entityMap,
+      hashtagConfig,
+      directional,
+      customEntityTransform
+    ));
+  }
+  codeHtml.push(`</${getBlockTag(previousBlock.type)}>\n`);
+  return codeHtml.join('');
+};
+
+/**
  * Function will return html markup for a list block.
  */
 const getListMarkup = (
@@ -583,15 +658,24 @@ export const richtextToHtml = (editorContent: any,
     const {blocks, entityMap} = editorContent;
     if (blocks && blocks.length > 0) {
       let listBlocks = [];
-      blocks.forEach((block) => {
+      let codeBlocks = [];
+
+      blocks.forEach((block, index) => {
         if (isList(block.type)) {
           listBlocks.push(block);
-        } else {
-          if (listBlocks.length > 0) {
+          if (!isList(blocks?.[index + 1]?.type)) {
             const listHtml = getListMarkup(listBlocks, entityMap, hashtagConfig, customEntityTransform); // eslint-disable-line max-len
             html.push(listHtml);
             listBlocks = [];
           }
+        } else if (isCode(block.type)) {
+          codeBlocks.push(block);
+          if (!isCode(blocks?.[index + 1]?.type)) {
+            const codeHtml = getCodeMarkup(codeBlocks, entityMap, hashtagConfig, customEntityTransform);
+            html.push(codeHtml);
+            codeBlocks = [];
+          }
+        } else {
           const blockHtml = getBlockMarkup(
             block,
             entityMap,
@@ -602,11 +686,6 @@ export const richtextToHtml = (editorContent: any,
           html.push(blockHtml);
         }
       });
-      if (listBlocks.length > 0) {
-        const listHtml = getListMarkup(listBlocks, entityMap, hashtagConfig, directional, customEntityTransform); // eslint-disable-line max-len
-        html.push(listHtml);
-        listBlocks = [];
-      }
     }
   }
   return html.join('');

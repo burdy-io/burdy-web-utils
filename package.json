@@ -1,6 +1,6 @@
 {
   "name": "burdy-web-utils",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Utility library for web",
   "main": "index.js",
   "author": {
